@@ -30,18 +30,21 @@ void ACPIHandler::handleEvent(ACPIEvent event) {
 
     switch(event) {
         case ACPIEvent::DOCKED:
+			syslog(LOG_INFO, "DOCKED event received\n");
             pthread_mutex_lock(&mutex);
             manager.applyConfiguration(CRTControllerManager::DockState::DOCKED);
-	    hooks.executeDockHook();
+			hooks.executeDockHook();
             pthread_mutex_unlock(&mutex);
             break;
         case ACPIEvent::UNDOCKED:
+			syslog(LOG_INFO, "UNDOCKED event received\n");
             pthread_mutex_lock(&mutex);
             manager.applyConfiguration(CRTControllerManager::DockState::UNDOCKED);
-	    hooks.executeUndockHook();
+			hooks.executeUndockHook();
             pthread_mutex_unlock(&mutex);
             break;
         case ACPIEvent::POWER_S3S4_EXIT:
+			syslog(LOG_INFO, "POWER_S3S4_EXIT event received\n");
 
             if (!dock.probe()) {
                 syslog(LOG_INFO, "Dock is not sane, not running dynamic sleep handler\n");
@@ -61,6 +64,7 @@ void ACPIHandler::handleEvent(ACPIEvent event) {
 
 }
 
+/* TODO: error checking */
 int startDaemon() {
 
     openlog("dockd", LOG_NDELAY | LOG_PID, LOG_DAEMON);
@@ -75,9 +79,10 @@ int startDaemon() {
 
     closelog();
 
+	return 0;
 }
 
-int showHelp() {
+void showHelp() {
     printf("Usage: dockd [OPERAND] [?ARGUMENT]\n"
            "\n"
            "    dockd --help                        - show this help dialog\n"
@@ -104,12 +109,14 @@ int writeConfig(const char *state) {
     }
 
     CRTControllerManager manager;
-    if (manager.writeConfigToDisk(dockState)) {
-        printf("config file written to %s\n",
-               dockState == CRTControllerManager::DockState::DOCKED ? CONFIG_LOCATION_DOCKED : CONFIG_LOCATION_UNDOCKED);
-
+    if (!manager.writeConfigToDisk(dockState)) {
+		return EXIT_FAILURE;
     }
 
+    printf("config file written to %s\n",
+        dockState == CRTControllerManager::DockState::DOCKED ? CONFIG_LOCATION_DOCKED : CONFIG_LOCATION_UNDOCKED);
+
+	return EXIT_SUCCESS;
 }
 
 int applyConfig(const char *state) {
@@ -130,12 +137,14 @@ int applyConfig(const char *state) {
     }
 
     CRTControllerManager manager;
-    if (manager.applyConfiguration(dockState)) {
-        printf("config applied from %s\n",
-               dockState == CRTControllerManager::DockState::DOCKED ? CONFIG_LOCATION_DOCKED : CONFIG_LOCATION_UNDOCKED);
-
+    if (!manager.applyConfiguration(dockState)) {
+		return EXIT_FAILURE;
     }
 
+    printf("config applied from %s\n",
+        dockState == CRTControllerManager::DockState::DOCKED ? CONFIG_LOCATION_DOCKED : CONFIG_LOCATION_UNDOCKED);
+
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char *argv[])
@@ -158,7 +167,8 @@ int main(int argc, char *argv[])
     }
 
     if (strcmp(argv[1], "--help") == 0) {
-        return showHelp();
+        showHelp();
+		return EXIT_SUCCESS;
     }
 
     if (strcmp(argv[1], "--config") == 0) {
