@@ -20,6 +20,8 @@ CRTControllerManager::~CRTControllerManager()
 bool CRTControllerManager::applyConfiguration(CRTControllerManager::DockState state)
 {
 
+	syslog(LOG_INFO, "Sleeping for 2 secs before discovering...\n");
+	sleep(2);
     /* Reconnect to the server */
 
     disconnectFromX();

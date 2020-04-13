@@ -8,8 +8,8 @@ using ThinkPad::Utilities::Ini::Ini;
 using ThinkPad::Utilities::Ini::IniKeypair;
 using ThinkPad::Utilities::Ini::IniSection;
 
-#define CONFIG_LOCATION_DOCKED "/etc/dockd/docked.conf"
-#define CONFIG_LOCATION_UNDOCKED "/etc/dockd/undocked.conf"
+#define CONFIG_LOCATION_DOCKED "~/.config/dockd/docked.conf"
+#define CONFIG_LOCATION_UNDOCKED "~/.config/dockd/undocked.conf"
 
 typedef struct _crtc {
 
