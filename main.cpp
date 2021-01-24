@@ -24,7 +24,20 @@ private:
 
 public:
     void handleEvent(ACPIEvent event);
+	ACPIHandler();
 };
+
+ACPIHandler::ACPIHandler() {
+	if (dock.isDocked()) {
+		syslog(LOG_INFO, "Setting docking configuration as initialization\n");
+        manager.applyConfiguration(CRTControllerManager::DockState::DOCKED);
+		hooks.executeDockHook();
+	} else {
+		syslog(LOG_INFO, "Setting undocking configuration as initialization\n");
+        manager.applyConfiguration(CRTControllerManager::DockState::UNDOCKED);
+		hooks.executeUndockHook();
+	}
+}
 
 void ACPIHandler::handleEvent(ACPIEvent event) {
 
@@ -141,6 +154,18 @@ int applyConfig(const char *state) {
 		return EXIT_FAILURE;
     }
 
+    Hooks hooks;
+    switch (dockState) {
+        case CRTControllerManager::DockState::DOCKED:
+            hooks.executeDockHook();
+            break;
+        case CRTControllerManager::DockState::UNDOCKED:
+            hooks.executeUndockHook();
+            break;
+        default:
+            break;
+    }
+
     printf("config applied from %s\n",
         dockState == CRTControllerManager::DockState::DOCKED ? CONFIG_LOCATION_DOCKED : CONFIG_LOCATION_UNDOCKED);
 
@@ -149,7 +174,6 @@ int applyConfig(const char *state) {
 
 int main(int argc, char *argv[])
 {
-
     if (argc == 1) {
       printf("dockd " VERSION " (libthinkpad %d.%d)\n"
             "Copyright (C) 2017 The Thinkpads.org Team\n"
